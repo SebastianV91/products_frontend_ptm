@@ -23,6 +23,7 @@ export default function Products() {
     const [snackbarSeverity, setSnackbarSeverity] = useState('success')
 
     const [open, setOpen] = useState(false)
+    const [openEdit, setOpenEdit] = useState(false)
     const [products, setProducts] = useState(null)
     const [deleteId, setDeleteId] = useState(null)
     const [confirmOpen, setConfirmOpen] = useState(false)
@@ -34,8 +35,25 @@ export default function Products() {
       cantidadStock: ''
     })
 
+    const [editProduct, setEditProduct] = useState({
+      id: null,
+      nombre: '',
+      descripcion: '',
+      precio: '',
+      cantidadStock: ''
+    })
+
+    const handleClickOpenEdit = (product) => {
+      setEditProduct(product)
+      setOpenEdit(true)
+    }
+
     const handleChange = (e) => {
       setNewProduct({...newProduct, [e.target.name]: e.target.value});
+    }
+
+    const handleChangeEdit = (e) => {
+      setEditProduct({...editProduct, [e.target.name]: e.target.value})
     }
 
     const handleConfirmOpen = (id) => {
@@ -56,6 +74,10 @@ export default function Products() {
       setOpen(false)
     }
 
+    const handleCloseEdit = () => {
+      setOpenEdit(false)
+    }
+
     const handleDelete = async (id)  => {
      setSnackbarOpen(true)
       try {
@@ -72,6 +94,25 @@ export default function Products() {
           setSnackbarSeverity("warning")
       }
     };
+
+    const handleEditProduct = async () => {
+      try{
+        const response = await axios.put(`http://localhost:8084/product/${editProduct.id}`, {
+            ...editProduct,
+            price: parseFloat(editProduct.price)
+        });
+        setProducts(products.map(product =>
+          product.id === editProduct.id ? response.data : product
+        ));
+        setSnackbarMessage("¡El Producto fue actualizado exitosamente!")
+        setSnackbarSeverity("success")
+        handleCloseEdit();
+      }catch(error){
+        setSnackbarMessage("!Este fue un error actualizando el producto! Favor, volver a intentarlo")
+        setSnackbarSeverity("warning")
+        console.log('Error ocurrido actualizando el producto', error)
+      }
+    }
 
     const handleAddProduct = async () => {
       try {
@@ -95,7 +136,6 @@ export default function Products() {
     useEffect(() => {
         axios.get('http://localhost:8084/products').then(response => {
             setProducts(response.data)
-            console.log(response.data)
         })
     }, []);
 
@@ -141,7 +181,7 @@ export default function Products() {
                   <IconButton color='secondary' onClick={() => handleConfirmOpen(product.id)}>
                       <DeleteIcon/>
                   </IconButton>
-                  <IconButton color='secondary'>
+                  <IconButton color='secondary'onClick={() => handleClickOpenEdit(product)}>
                       <EditIcon/>
                   </IconButton>
               </TableCell>
@@ -210,7 +250,7 @@ export default function Products() {
             margin="dense"
             name="cantidadStock"
             label="CANTIDAD EN EL STOCK"
-            type="text"
+            type="number"
             fullWidth
             value={newProduct.cantidadStock}
             onChange={handleChange}
@@ -222,6 +262,57 @@ export default function Products() {
           </Button>
           <Button onClick={handleAddProduct} color="primary" variant="contained">
             Add Product
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialogo Modal para editar un producto */}
+      <Dialog open={openEdit} onClose={handleCloseEdit}>
+        <DialogTitle>AGREGAR NUEVO PRODUCTO</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            name="nombre"
+            label="NOMBRE DEL PRODUCTO"
+            type="text"
+            fullWidth
+            value={editProduct.nombre}
+            onChange={handleChangeEdit}
+          />
+          <TextField
+            margin="dense"
+            name="descripcion"
+            label="DESCRIPCION"
+            type="text"
+            fullWidth
+            value={editProduct.descripcion}
+            onChange={handleChangeEdit}
+          />
+          <TextField
+            margin="dense"
+            name="precio"
+            label="PRECIO"
+            type="text"
+            fullWidth
+            value={editProduct.precio}
+            onChange={handleChangeEdit}
+          />
+          <TextField
+            margin="dense"
+            name="cantidadStock"
+            label="CANTIDAD EN EL STOCK"
+            type="text"
+            fullWidth
+            value={editProduct.cantidadStock}
+            onChange={handleChangeEdit}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEdit} color="primary">
+            Cancelar
+          </Button>
+          <Button color="primary" variant="contained" onClick={handleEditProduct}>
+            Actualizar Producto
           </Button>
         </DialogActions>
       </Dialog>
