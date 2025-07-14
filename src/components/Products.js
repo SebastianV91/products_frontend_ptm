@@ -15,7 +15,6 @@ import TableRow from '@mui/material/TableRow';
 
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
-import axiosInstance from '../axiosConfig';
 
 export default function Products() {
 
@@ -23,9 +22,21 @@ export default function Products() {
     const [snackbarMessage, setSnackbarMessage] = useState("")
     const [snackbarSeverity, setSnackbarSeverity] = useState('success')
 
+    const [open, setOpen] = useState(false)
     const [products, setProducts] = useState(null)
     const [deleteId, setDeleteId] = useState(null)
     const [confirmOpen, setConfirmOpen] = useState(false)
+    const [newProduct, setNewProduct] = useState({
+      id: '',
+      nombre: '',
+      descripcion: '',
+      precio: '',
+      cantidadStock: ''
+    })
+
+    const handleChange = (e) => {
+      setNewProduct({...newProduct, [e.target.name]: e.target.value});
+    }
 
     const handleConfirmOpen = (id) => {
       setDeleteId(id)
@@ -37,10 +48,18 @@ export default function Products() {
       setConfirmOpen(false)
     }
 
+    const handleClickOpen = () => {
+      setOpen(true)
+    } 
+
+    const handleClose = () => {
+      setOpen(false)
+    }
+
     const handleDelete = async (id)  => {
      setSnackbarOpen(true)
       try {
-          await axiosInstance.delete(`http://localhost:8084/product/${id}`);
+          await axios.delete(`http://localhost:8084/product/${id}`);
           setProducts(products.filter(product => product.id !== id));
 
           setSnackbarMessage("¡El Producto fue eliminado exitosamente!")
@@ -53,6 +72,25 @@ export default function Products() {
           setSnackbarSeverity("warning")
       }
     };
+
+    const handleAddProduct = async () => {
+      try {
+        const response = await axios.post('http://localhost:8084/products', {
+            ...newProduct,
+            price: parseFloat(newProduct.price)
+        });
+        setProducts([...products, response.data])
+        setNewProduct({
+          nombre: '',
+          descripcion: '',
+          precio: '',
+          cantidadStock: ''
+        });
+        handleClose();
+      }catch (error){
+        console.log('¡Este fue un error agregando el producto!', error)
+      }
+    }
 
     useEffect(() => {
         axios.get('http://localhost:8084/products').then(response => {
@@ -72,6 +110,11 @@ export default function Products() {
       fullWidth
     >
     <TableContainer component={Paper} style={{width:'70%'}}>
+
+      <Box display="flex" justifyContent="flex-start">
+        <Button variant='contained' onClick={handleClickOpen}>AGREGAR NUEVO PRODUCTO</Button>
+      </Box>
+
       <Table sx={{ minWidth: 650 }} aria-label="simple table">
         <TableHead>
           <TableRow>
@@ -91,8 +134,8 @@ export default function Products() {
             >
               <TableCell align="right">{product.id}</TableCell>
               <TableCell align="right">{product.nombre}</TableCell>
-              <TableCell align="right">{product.descripcion}</TableCell>
-              <TableCell align="right">{product.precio}</TableCell>
+              <TableCell align="left">{product.descripcion}</TableCell>
+              <TableCell align="center">{product.precio}</TableCell>
               <TableCell align="center">{product.cantidadStock}</TableCell>
               <TableCell align='center'>
                   <IconButton color='secondary' onClick={() => handleConfirmOpen(product.id)}>
@@ -128,6 +171,57 @@ export default function Products() {
             variant="contained"
           >
             Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialogo Modal para agregar nuevo producto */}
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>AGREGAR NUEVO PRODUCTO</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            name="nombre"
+            label="NOMBRE DEL PRODUCTO"
+            type="text"
+            fullWidth
+            value={newProduct.nombre}
+            onChange={handleChange}
+          />
+          <TextField
+            margin="dense"
+            name="descripcion"
+            label="DESCRIPCION"
+            type="text"
+            fullWidth
+            value={newProduct.descripcion}
+            onChange={handleChange}
+          />
+          <TextField
+            margin="dense"
+            name="precio"
+            label="PRECIO"
+            type="text"
+            fullWidth
+            value={newProduct.precio}
+            onChange={handleChange}
+          />
+          <TextField
+            margin="dense"
+            name="cantidadStock"
+            label="CANTIDAD EN EL STOCK"
+            type="text"
+            fullWidth
+            value={newProduct.cantidadStock}
+            onChange={handleChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleAddProduct} color="primary" variant="contained">
+            Add Product
           </Button>
         </DialogActions>
       </Dialog>
